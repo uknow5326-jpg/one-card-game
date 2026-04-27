@@ -12,13 +12,17 @@ const state = {
   roomCode: "",
   room: null,
   onlineIds: new Set(),
+  chatDraft: "",
   status: "닉네임을 입력한 뒤 방을 만들거나 초대코드로 입장하세요.",
   socket: null,
   connected: false,
 };
 
 connectSocket();
-setInterval(() => render(), 1000);
+setInterval(() => {
+  if (isTyping()) return;
+  if (state.room?.game?.oneCard && !state.room.game.oneCard.declared) render();
+}, 1000);
 
 function getPlayerId() {
   let id = localStorage.getItem(PLAYER_ID_KEY);
@@ -45,6 +49,7 @@ function connectSocket() {
     if (message.type === "room") {
       state.room = message.payload.room;
       state.onlineIds = new Set(message.payload.onlineIds || []);
+      if (isTyping()) return;
       render();
     }
     if (message.type === "joined") {
@@ -117,6 +122,10 @@ function catchOneCard() {
 function sendChat(text) {
   if (!text.trim()) return;
   send("chat", { text: text.trim() });
+}
+
+function isTyping() {
+  return Boolean(document.activeElement?.matches("input, textarea"));
 }
 
 function myPlayer() {
@@ -354,7 +363,7 @@ function chatPanel() {
         ${messages.map((message) => `<div class="chat-message"><b>${escapeHtml(message.nickname)}</b><span>${escapeHtml(message.body)}</span></div>`).join("")}
       </div>
       <form class="chat-form" data-chat-form>
-        <input id="chatInput" type="text" placeholder="메시지 입력" autocomplete="off" ${state.room ? "" : "disabled"} />
+        <input id="chatInput" type="text" value="${escapeHtml(state.chatDraft)}" placeholder="${state.room ? "메시지 입력" : "방 입장 후 채팅 가능"}" autocomplete="off" ${state.room ? "" : "disabled"} />
         <button type="submit" ${state.room ? "" : "disabled"}>전송</button>
       </form>
     </section>
@@ -373,6 +382,8 @@ function bindEvents() {
   const roomCodeInput = document.querySelector("#roomCodeInput");
   if (nicknameInput) nicknameInput.addEventListener("input", (event) => { state.nickname = event.target.value; });
   if (roomCodeInput) roomCodeInput.addEventListener("input", (event) => { state.roomCodeInput = event.target.value.toUpperCase(); });
+  const chatInput = document.querySelector("#chatInput");
+  if (chatInput) chatInput.addEventListener("input", (event) => { state.chatDraft = event.target.value; });
 
   document.querySelectorAll("[data-cell]").forEach((cell) => {
     cell.addEventListener("click", (event) => {
@@ -396,7 +407,8 @@ function bindEvents() {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const input = form.querySelector("#chatInput");
-      sendChat(input.value);
+      sendChat(state.chatDraft || input.value);
+      state.chatDraft = "";
       input.value = "";
     });
   });
