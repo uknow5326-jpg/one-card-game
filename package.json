@@ -5,8 +5,8 @@
   "description": "Spreadsheet-style realtime multiplayer One Card game for Render.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0",
+    "build": "node node_modules/vite/bin/vite.js build",
+    "preview": "node node_modules/vite/bin/vite.js preview --host 0.0.0.0",
     "start": "node server.js"
   },
   "dependencies": {
