@@ -20,7 +20,6 @@ const state = {
 
 connectSocket();
 setInterval(() => {
-  if (isTyping()) return;
   if (state.room?.game?.oneCard && !state.room.game.oneCard.declared) render();
 }, 1000);
 
@@ -49,7 +48,6 @@ function connectSocket() {
     if (message.type === "room") {
       state.room = message.payload.room;
       state.onlineIds = new Set(message.payload.onlineIds || []);
-      if (isTyping()) return;
       render();
     }
     if (message.type === "joined") {
@@ -124,10 +122,6 @@ function sendChat(text) {
   send("chat", { text: text.trim() });
 }
 
-function isTyping() {
-  return Boolean(document.activeElement?.matches("input, textarea"));
-}
-
 function myPlayer() {
   return state.room?.players?.find((player) => player.id === state.playerId);
 }
@@ -186,6 +180,7 @@ function roomStatus() {
 }
 
 function render() {
+  const focusState = captureFocusState();
   document.querySelector("#app").innerHTML = `
     <main class="workbook">
       <header class="title-bar">
@@ -220,6 +215,34 @@ function render() {
     </main>
   `;
   bindEvents();
+  restoreFocusState(focusState);
+}
+
+function captureFocusState() {
+  const active = document.activeElement;
+  if (!active?.matches?.("input, textarea")) return null;
+  return {
+    id: active.id,
+    value: active.value,
+    start: active.selectionStart,
+    end: active.selectionEnd,
+  };
+}
+
+function restoreFocusState(focusState) {
+  if (!focusState?.id) return;
+  const input = document.querySelector(`#${focusState.id}`);
+  if (!input || input.disabled) return;
+  input.value = focusState.value;
+  if (focusState.id === "nicknameInput") state.nickname = focusState.value;
+  if (focusState.id === "roomCodeInput") state.roomCodeInput = focusState.value;
+  if (focusState.id === "chatInput") state.chatDraft = focusState.value;
+  input.focus();
+  try {
+    input.setSelectionRange(focusState.start, focusState.end);
+  } catch {
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
 }
 
 function ribbonGroup(label, items) {
