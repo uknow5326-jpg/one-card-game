@@ -1,0 +1,19 @@
+{
+  "name": "spreadsheet-card-room",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spreadsheet-style realtime multiplayer One Card game for Render.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.3",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}
